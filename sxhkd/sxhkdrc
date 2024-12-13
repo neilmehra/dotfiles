@@ -208,7 +208,7 @@ super + Scroll_Lock
   betterlockscreen -l dimblur --display 1
 
 super + b
-  google-chrome-stable
+  brave
 
 super + c 
   clipster -sc

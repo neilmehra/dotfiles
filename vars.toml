@@ -8,7 +8,7 @@ use_main = "true"
 use_l = "true"
 use_r = "false"
 
-wallpaper = "/home/neil/pictures/anime/wallpapers/wallpaper-low-exposure.png"
+wallpaper = "/home/neil/downloads/peakhiguexp.png"
 wal = "~/.config/wal/backup"
 use_xrandr = "true"
 xrandr_script = "~/.screenlayout/gatech.sh"

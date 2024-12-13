@@ -29,9 +29,7 @@ alias vim='nvim'
 alias vi='nvim'
 alias setbg="feh --bg-fill"
 alias cpick="colorpicker --one-shot"
-# alias ytaudio="yt-dlp -f 'ba' -x --no-playlist"
 alias ytaudio="$HOME/scripts/ytaudio.sh"
-alias bonsai='cbonsai -liw 10 -m "こんばんは ニール！"'
 alias xev='~/scripts/xev.sh'
 alias fileman="pcmanfm > /dev/null 2>&1"
 alias nc="ncmpcpp"
@@ -78,7 +76,7 @@ export EDITOR="$VISUAL"
 export XDG_CONFIG_HOME="$HOME/.config"
 export _JAVA_AWT_WM_NONREPARENTING=1
 export AWT_TOOLKIT=MToolkit
-export OSU_SONG_FOLDER=/home/neil/games/osu/Songs
+
 
 source $HOME/.rvm/scripts/rvm
 
