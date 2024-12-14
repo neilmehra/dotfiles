@@ -22,7 +22,7 @@ bspc monitor {{ monitor.left }} -d 6 7 8 9 10
 
 bspc config border_width         {{ bspwm.border_width }}
 
-bspc config window_gap          15
+bspc config window_gap          {{ bspwm.window_gap }}
 
 bspc config top_padding {{ bspwm.top_padding }}
 bspc config bottom_padding {{ bspwm.bottom_padding }}

@@ -1,23 +1,27 @@
 [monitor]
-main = "DP-2"
+left = "HDMI-0"
+main = "eDP-1"
+right = "DP-4"
 
 [mpd]
-using = "false"
-
-[picom]
 using = "false"
 
 [bspwm]
 border_width = "3"
 top_padding = "50"
-bottom_padding = "20"
-left_padding = "20"
-right_padding = "20"
+bottom_padding = "15"
+left_padding = "15"
+right_padding = "15"
+window_gap = "15"
 
 [polybar]
 using_center = "true"
 using_left = "false"
 using_right = "false"
+network_device = "wlo1"
 
 [xrandr]
 script = "$HOME/.screenlayout/laptop.sh"
+
+[browser]
+cmd = "google-chrome-stable"

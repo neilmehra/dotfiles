@@ -146,7 +146,7 @@ super + shift + s
   flameshot gui
 
 super + b
-  brave
+  {{ browser.cmd }}
 
 super + c 
   clipster -sc
@@ -157,5 +157,14 @@ super + period
 super + e
   pcmanfm 
 
+{% if "laptop" in profiles %}
+
 super + g
-  bombadil link -p bspwm
+  bombadil link -p laptop
+
+{% else %}
+
+super + g
+  bombadil link -p desktop
+
+{% endif %}

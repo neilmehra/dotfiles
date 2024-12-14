@@ -4,7 +4,8 @@
 dotfiles_dir = "dotfiles"
 
 [settings]
-posthooks = [ "bspc wm -r" ]
+posthooks = [ "bspc wm -r", "pkill -USR1 -x sxhkd" ]
+	
 
 [settings.dots]
 fontconfig = { source = "fontconfig", target = ".config/fontconfig" }
@@ -23,13 +24,13 @@ zathura = { source = "zathura", target = ".config/zathura" }
 
 cpxc = { source = "scripts/connect_pxc.sh", target = "scripts/connect_pxc.sh" }
 dpxc = { source = "scripts/disconnect_pxc.sh", target = "scripts/disconnect_pxc.sh" }
-dpxc = { source = "scripts/keyboard-setup.sh", target = "scripts/keyboard-setup.sh" }
+kbsetup = { source = "scripts/keyboard-setup.sh", target = "scripts/keyboard-setup.sh" }
 osh = { source = "scripts/osuhelper.sh", target = "scripts/osuhelper.sh" }
 ppxc = { source = "scripts/pair_pxc.sh", target = "scripts/pair_pxc.sh" }
 pyps = { source = "scripts/pyps.sh", target = "scripts/pyps.sh" }
 rea = { source = "scripts/rearchive.sh", target = "scripts/rearchive.sh" }
 setbg = { source = "scripts/setbg.sh", target = "scripts/setbg.sh" }
-setbg = { source = "scripts/sp", target = "scripts/sp" }
+sp = { source = "scripts/sp", target = "scripts/sp" }
 xauto = { source = "scripts/xautostart.sh", target = "scripts/xautostart.sh" }
 xev = { source = "scripts/xev.sh", target = "scripts/xev.sh" }
 ycmd = { source = "scripts/ycmd.sh", target = "scripts/ycmd.sh" }
@@ -49,7 +50,6 @@ rofi = { source = "rofi", target = ".config/rofi" }
 sxhkd = { source = "sxhkd", target = ".config/sxhkd" }
 
 betterlockscreen = { source = "betterlockscreen/betterlockscreenrc", target = ".config/betterlockscreenrc" }
-picom = { source = "picom/picom.conf", target = ".config/picom.conf" }
 screenlayout = { source = "screenlayout", target = ".screenlayout" }
 xinitrc = { source = "x11/.xinitrc", target = ".xinitrc" }
 xmodmap = { source = "x11/.Xmodmap", target = ".Xmodmap" }
