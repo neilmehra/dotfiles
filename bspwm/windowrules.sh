@@ -4,8 +4,6 @@ bspc rule -a riotclientux.exe desktop='4'
 bspc rule -a explorer.exe desktop='4' border=off
 bspc rule -a 'league of legends.exe' desktop='4'  
 bspc rule -a Lutris desktop='4' 
-# bspc rule -a discord desktop='3' 
-# bspc rule -a 'jetbrains-studio' desktop='4'
 bspc rule -a obs state=floating
 bspc rule -a chatterino state=floating
 bspc rule -a 'Fcitx-config-gtk3' state=floating

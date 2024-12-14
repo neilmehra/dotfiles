@@ -1,4 +1,4 @@
-include "/home/neil/.gtkrc-2.0.mine"
+include "$HOME/.gtkrc-2.0.mine"
 gtk-theme-name="TokyoNight"
 gtk-icon-theme-name="Papirus-Dark"
 gtk-font-name="IBM Plex Mono"

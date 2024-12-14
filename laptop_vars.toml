@@ -1,0 +1,23 @@
+[monitor]
+main = "DP-2"
+
+[mpd]
+using = "false"
+
+[picom]
+using = "false"
+
+[bspwm]
+border_width = "3"
+top_padding = "50"
+bottom_padding = "20"
+left_padding = "20"
+right_padding = "20"
+
+[polybar]
+using_center = "true"
+using_left = "false"
+using_right = "false"
+
+[xrandr]
+script = "$HOME/.screenlayout/laptop.sh"

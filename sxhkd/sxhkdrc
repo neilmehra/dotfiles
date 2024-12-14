@@ -18,10 +18,6 @@ super + Escape
 # bspwm hotkeys
 #
 
-# quit/restart bspwm
-super + ctrl + shift + q
-  bspc quit
-
 super + shift + r
   bspc wm -r
 
@@ -33,17 +29,6 @@ super + {_,shift + }w
 super + m
 	bspc desktop -l next
 
-# send the newest marked node to the newest preselected node
-super + y
-	bspc node newest.marked.local -n newest.!automatic.local
-
-# # swap the current node and the biggest window
-# super + g
-# 	bspc node -s biggest.window
-
-# swap with last
-# super + g
-# 	bspc node -s last
 
 #
 # state/flags
@@ -61,12 +46,6 @@ super + ctrl + {m,x,y,z}
 # focus/swap
 #
 
-# focus the node in the given direction
-# super + {_,shift + }{h,j,k,l}
-# 	bspc node -{f,s} {west,south,north,east}
-
-# super + {h,j,k,l}
-# 	bspc node -f {west,south,north,east}
 
 super + {h,j,k,l}
   dir={west,south,north,east}; \
@@ -79,148 +58,51 @@ super + shift + {h,j,k,l}
         || bspc node -m "$dir" --follow
 
 
-
-# focus the node for the given path jump
-# super + {p,b,comma,period}
-# 	bspc node -f @{parent,brother,first,second}
-
-# focus the next/previous window in the current desktop
-# super + {_,shift + }c
-# 	bspc node -f {next,prev}.local.!hidden.window
-
 # focus the next/previous desktop in the current monitor
 super + bracket{left,right}
 	bspc desktop -f {prev,next}.local
 
 # focus the last node/desktop
 super + Tab
-	bspc {node,desktop} -f last
+	bspc desktop -f last
 
 super + grave 
   betterlockscreen -l
 
-# focus the older or newer node in the focus history
-# super + {o,i}
-# 	bspc wm -h off; \
-# 	bspc node {older,newer} -f; \
-# 	bspc wm -h on
-
-# focus or send to the given desktop
-# super + {_,shift + }{1-9,0}
-# 	bspc {desktop -f,node -d} '^{1-9,10}'
-
-#
-# preselect
-#
-
-# preselect the direction
-super + ctrl + {h,j,k,l}
-	bspc node -p {west,south,north,east}
-
-# preselect the ratio
-# super + ctrl + {1-9}
-# 	bspc node -o 0.{1-9}
-
-# cancel the preselection for the focused node
-super + ctrl + space
-	bspc node -p cancel
-
-# cancel the preselection for the focused desktop
-super + ctrl + shift + space
-	bspc query -N -d | xargs -I id -n 1 bspc node id -p cancel
-#
-#
-# move/resize
-#
-
-# expand a window by moving one of its side outward
-# super + alt + {h,j,k,l}
-# 	bspc node -z {left -20 0,bottom 0 20,top 0 -20,right 20 0}
-#
-# # contract a window by moving one of its side inward
-# super + alt + shift + {h,j,k,l}
-# 	bspc node -z {right -20 0,top 0 20,bottom 0 -20,left 20 0}
-
-# super + z : {h,j,k,l}
-#   STEP=20; SELECTION={1,2,3,4}; \
-#   bspc node -z $(echo "left -$STEP 0,bottom 0 $STEP,top 0 -$STEP,right $STEP 0" | cut -d',' -f$SELECTION) || \
-#   bspc node -z $(echo "right -$STEP 0,top 0 $STEP,bottom 0 -$STEP,left $STEP 0" | cut -d',' -f$SELECTION)
-
-
-
-
-# move a floating window
-# super + {Left,Down,Up,Right}
-# 	bspc node -v {-20 0,0 20,0 -20,20 0}
-
-
-
-# https://protesilaos.com
-# Dynamic desktop behaviour:  this invokes a script of mine that
-# implements dynamic desktops (see dotfiles).  If the given desktop
-# number is missing, it is created on the spot.  Empty desktops are then
-# removed automatically.
-#
-# mod3 +  = focus the given desktop
-# mod3 + shift +  = send focused window to given desktop
-# mod3 + ctrl + shift +  = as above, but send to next monitor
-# mod3 + ctrl + = switches the active (visible) desktop of the
-# unfocused monitor, without focusing it (focus stays on the current
-# desktop/monitor).  It also inserts a receptacle, meaning that the next
-# created window will go there without calling focus to itself (see my
-# bspwm_external_rules).
-#
-# Commands for receptacles are defined in the "advanced operations"
-# section.
-#
-# NOTE the leading `;` runs this command asynchronously.
-#super + {_,shift + ,ctrl + shift +,ctrl +}{asciicircum,1-9,0,ssharp,acute}
-#	;bspwm_dynamic_desktops {--df,--ns,--nm,--da} {0,1-9,10,11,12}
-#super + {_,shift + }{asciicircum,1-9,0,ssharp,acute}
-#	;bspwm_dynamic_desktops {--df,--ns} {0,1-9,10,11,12}
 
 #focus or send to the given desktop
 
 super + {_,shift + }{1-9}
 	bspc {desktop -f,node -d} {1,2,3,4,5,6,7,8,9}
 
-# super + shift + 6
-#   bspc node -d 6
 
-#swap desktops
-# super + ctrl + {grave,asciicircum,1-9
-# 	bspc desktop -s {0,0,1-9} --follow
+{% if "laptop" in profiles %}
 
-# # send focused desktop to the monitor of target desktop
-# super + ctrl + shift + {grave,asciicircum,1-9}
-# 	bspc desktop -m `bspc query -M -d {0,0,1-9} --names` --follow
-#
-# #send focused desktop to next/previous/{dir} monitor
-# super + ctrl + shift + {n,p,h,j,k,l}
-# 	bspc desktop -m {next,prev,west,south,north,east} --follow
-
-
-
-super + shift + s
-  flameshot gui
-
-super + Scroll_Lock
+super + Delete
   betterlockscreen -l dimblur --display 1
 
-super + b
-  brave
+XF86AudioRaiseVolume
+  pactl set-sink-volume 0 +5%
+XF86AudioLowerVolume
+  pactl set-sink-volume 0 -5%
+XF86AudioMute
+  pactl set-sink-mute 0 toggle
+XF86AudioPrev
+  $HOME/scripts/sp prev
+XF86AudioNext
+  $HOME/scripts/sp next
+XF86AudioPlay
+  $HOME/scripts/sp play
 
-super + c 
-  clipster -sc
+XF86MonBrightnessUp
+  brightnessctl set +5%
 
-super + period 
-  rofi -modi emoji -show emoji -kb-custom-1 Ctrl+C
+XF86MonBrightnessDown
+  brightnessctl set 5%-
 
-super + Pause
-  pkill picom &
-
-super + Print
-  picom --experimental-backend --refresh-rate 144 --xrender-sync-fence &
+{% else %}
+super + Scroll_Lock
+  betterlockscreen -l dimblur --display 1
 
 super + Delete
   mpc volume -1
@@ -258,11 +140,22 @@ XF86AudioRaiseVolume
 XF86AudioLowerVolume
   mpc volume -1
 
+{% endif %}
+
+super + shift + s
+  flameshot gui
+
+super + b
+  brave
+
+super + c 
+  clipster -sc
+
+super + period 
+  rofi -modi emoji -show emoji -kb-custom-1 Ctrl+C
+
 super + e
   pcmanfm 
-
-super + {equal,minus}
-	bspc config window_gap $((`bspc config -d focused window_gap` {-,+} 2 ))
 
 super + g
   bombadil link -p bspwm

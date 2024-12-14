@@ -1,0 +1,25 @@
+[monitor]
+left = "HDMI-0"
+main = "DP-2"
+right = "DP-4"
+
+[mpd]
+using = "true"
+
+[picom]
+using = "false"
+
+[bspwm]
+border_width = "4"
+top_padding = "50"
+bottom_padding = "10"
+left_padding = "10"
+right_padding = "10"
+
+[polybar]
+using_center = "true"
+using_left = "true"
+using_right = "false"
+
+[xrandr]
+script = "$HOME/.screenlayout/gatech.sh"

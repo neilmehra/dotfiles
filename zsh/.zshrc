@@ -1,7 +1,6 @@
 export PATH="/home/neil/.local/bin:$PATH"
 export ZSH="$HOME/.oh-my-zsh"
 
-#ZSH_THEME="powerlevel10k/powerlevel10k"
 ZSH_THEME="minimal"
 
 zstyle ':omz:update' mode disabled
@@ -74,8 +73,6 @@ export VISUAL=/usr/bin/nvim
 export GIT_EDITOR="$VISUAL"
 export EDITOR="$VISUAL"
 export XDG_CONFIG_HOME="$HOME/.config"
-export _JAVA_AWT_WM_NONREPARENTING=1
-export AWT_TOOLKIT=MToolkit
 
 
 source $HOME/.rvm/scripts/rvm
