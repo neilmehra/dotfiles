@@ -6,6 +6,6 @@ mpd &
 
 clipster -d &
 
-$HOME/scripts/setbg.sh &
-$HOME/.config/polybar/launch.sh &
-$HOME/scripts/xautostart.sh
+~/scripts/setbg.sh &
+~/.config/polybar/launch.sh &
+~/scripts/xautostart.sh

@@ -75,7 +75,7 @@ export EDITOR="$VISUAL"
 export XDG_CONFIG_HOME="$HOME/.config"
 
 
-source $HOME/.rvm/scripts/rvm
+# source $HOME/.rvm/scripts/rvm
 
 bindkey -s '^Z' 'fg\n'
 
@@ -85,4 +85,4 @@ fi
 
 
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
-export PATH="$PATH:$HOME/.rvm/bin"
+# export PATH="$PATH:$HOME/.rvm/bin"
