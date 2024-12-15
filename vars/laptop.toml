@@ -21,7 +21,7 @@ using_right = "false"
 network_device = "wlo1"
 
 [xrandr]
-script = "$HOME/.screenlayout/laptop.sh"
+script = "~/.screenlayout/laptop.sh"
 
 [browser]
 cmd = "google-chrome-stable"

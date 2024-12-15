@@ -21,7 +21,7 @@ using_right = "false"
 network_device = "wlp6s0"
 
 [xrandr]
-script = "$HOME/.screenlayout/gatech.sh"
+script = "~/.screenlayout/gatech.sh"
 
 [browser]
 cmd = "brave"

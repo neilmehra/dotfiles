@@ -57,9 +57,9 @@ xmodmap = { source = "x11/.Xmodmap", target = ".Xmodmap" }
 
 [profiles.desktop]
 
-vars = [ "base_vars.toml", "desktop_vars.toml" ]
+vars = [ "vars/base.toml", "vars/desktop.toml" ]
 
 
 [profiles.laptop]
 
-vars = [ "base_vars.toml", "laptop_vars.toml" ]
+vars = [ "vars/base.toml", "vars/laptop.toml" ]
