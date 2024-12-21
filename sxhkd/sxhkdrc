@@ -82,9 +82,9 @@ super + Delete
   betterlockscreen -l dimblur --display 1
 
 XF86AudioRaiseVolume
-  pactl set-sink-volume 0 +5%
+  pactl set-sink-volume 0 +2%
 XF86AudioLowerVolume
-  pactl set-sink-volume 0 -5%
+  pactl set-sink-volume 0 -2%
 XF86AudioMute
   pactl set-sink-mute 0 toggle
 XF86AudioPrev
@@ -95,10 +95,10 @@ XF86AudioPlay
   $HOME/scripts/sp play
 
 XF86MonBrightnessUp
-  brightnessctl set +5%
+  brightnessctl set +2%
 
 XF86MonBrightnessDown
-  brightnessctl set 5%-
+  brightnessctl set 2%-
 
 {% else %}
 super + Scroll_Lock
