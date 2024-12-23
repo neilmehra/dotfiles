@@ -7,15 +7,14 @@ while pgrep -u $UID -x polybar >/dev/null; do sleep 1; done
 
 # Launch the bar
 
-{%- if polybar.using_center == "true" %}
 polybar -q center -c   ~/.config/polybar/config.ini &
-{% endif -%}
 
-{%- if polybar.using_left == "true" %}
-polybar -q left -c   ~/.config/polybar/config.ini &
-{% endif -%}
+{% if "laptop" in profiles %}
 
-{%- if polybar.using_right == "true" %}
 polybar -q right -c   ~/.config/polybar/config.ini &
-{% endif -%}
 
+{% else %}
+
+polybar -q left -c   ~/.config/polybar/config.ini &
+
+{% endif %}

@@ -1,7 +1,7 @@
 [monitor]
 left = "HDMI-0"
 main = "eDP-1"
-right = "DP-4"
+right = "HDMI-1-0"
 
 [mpd]
 using = "false"
