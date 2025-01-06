@@ -9,6 +9,7 @@ posthooks = [ "bspc wm -r", "pkill -USR1 -x sxhkd" ]
 
 [settings.dots]
 fontconfig = { source = "fontconfig", target = ".config/fontconfig" }
+clangd = { source = "clangd", target = ".config/clangd" }
 gtk3 = { source = "gtk/gtk-3.0", target = ".config/gtk-3.0" }
 kitty = { source = "kitty", target = ".config/kitty" }
 nvim = { source = "nvim", target = ".config/nvim" }

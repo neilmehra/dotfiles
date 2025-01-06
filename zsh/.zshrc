@@ -38,6 +38,7 @@ alias yt="$HOME/scripts/ycmd.sh"
 alias mwin="sudo mount /data/windows"
 alias hgr="history | grep"
 alias up="cd .."
+alias gssh="ssh-add ~/.ssh/id_ed25519"
 
 mkc() {
   mkdir $1 
