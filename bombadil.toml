@@ -31,6 +31,7 @@ ppxc = { source = "scripts/pair_pxc.sh", target = "scripts/pair_pxc.sh" }
 pyps = { source = "scripts/pyps.sh", target = "scripts/pyps.sh" }
 rea = { source = "scripts/rearchive.sh", target = "scripts/rearchive.sh" }
 setbg = { source = "scripts/setbg.sh", target = "scripts/setbg.sh" }
+nogap = { source = "scripts/nogap.sh", target = "scripts/nogap.sh" }
 sp = { source = "scripts/sp", target = "scripts/sp" }
 xauto = { source = "scripts/xautostart.sh", target = "scripts/xautostart.sh" }
 xev = { source = "scripts/xev.sh", target = "scripts/xev.sh" }
