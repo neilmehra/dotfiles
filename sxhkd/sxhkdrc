@@ -113,11 +113,11 @@ super + End
 super + Next 
   mpc volume +1
 
-super + Insert 
-  mpc prev 
-
-super + Prior 
-  mpc next 
+# super + Insert 
+#   mpc next 
+#
+# super + Prior 
+#   mpc prev 
 
 super + Home
   mpc single
@@ -126,10 +126,10 @@ XF86AudioPlay
   mpc toggle
 
 XF86AudioPrev
-  mpc prev
+  mpc next
 
 XF86AudioNext
-  mpc next
+  mpc prev
 
 XF86AudioRewind
   mpc single
