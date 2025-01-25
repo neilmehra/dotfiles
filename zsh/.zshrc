@@ -39,6 +39,7 @@ alias mwin="sudo mount /data/windows"
 alias hgr="history | grep"
 alias up="cd .."
 alias gssh="ssh-add ~/.ssh/id_ed25519"
+alias fd="fd -H"
 
 mkc() {
   mkdir $1 
@@ -85,5 +86,6 @@ if [[ -n $SSH_CONNECTION ]] ; then
 fi
 
 
+source $HOME/.rvm/scripts/rvm
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
-# export PATH="$PATH:$HOME/.rvm/bin"
+export PATH="$PATH:$HOME/.rvm/bin"
