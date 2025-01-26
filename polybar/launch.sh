@@ -15,6 +15,7 @@ polybar -q left -c   ~/.config/polybar/config.ini &
 
 {% elif "displaylink3" in profiles %}
 
+polybar -q left -c   ~/.config/polybar/config.ini &
 polybar -q right -c   ~/.config/polybar/config.ini &
 
 {% else %}
