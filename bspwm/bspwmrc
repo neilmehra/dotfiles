@@ -9,13 +9,27 @@ bspc wm -O {{ monitor.main }}
 
 {% if "laptop" in profiles %}
 
+{% if "displaylink2" in profiles %}
+
+bspc monitor {{ monitor.left}} -d 1 2 3 4 5
+bspc monitor {{ monitor.main }} -d 6 7 8 9 10
+
+{% elif "displaylink3" in profiles %}
+
+bspc monitor {{ monitor.main }} -d 1 2 3 4 5
+bspc monitor {{ monitor.left }} -d 6 7 8 9 10
+bspc monitor {{ monitor.right }} -d 11 12 13 14 15
+
+{% else %}
+
 bspc monitor {{ monitor.main }} -d 1 2 3 4 5 6 7 8 9 10
+
+{% endif %}
 
 {% else %}
 
 bspc monitor {{ monitor.main }} -d 1 2 3 4 5
 bspc monitor {{ monitor.left }} -d 6 7 8 9 10
-# bspc monitor {{ monitor.right }} -d 11 12 13 14 15
 
 {% endif %}
 

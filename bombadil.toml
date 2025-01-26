@@ -65,3 +65,13 @@ vars = [ "vars/base.toml", "vars/desktop.toml" ]
 [profiles.laptop]
 
 vars = [ "vars/base.toml", "vars/laptop.toml" ]
+
+[profiles.displaylink2]
+
+vars = [ "vars/displaylink2.toml" ]
+
+[profiles.displaylink3]
+
+vars = [ "vars/displaylink3.toml" ]
+
+

@@ -1,7 +1,5 @@
 [monitor]
-left = "HDMI-0"
 main = "eDP-1"
-right = "HDMI-1-0"
 
 [mpd]
 using = "false"
@@ -15,13 +13,7 @@ right_padding = "15"
 window_gap = "15"
 
 [polybar]
-using_center = "true"
-using_left = "false"
-using_right = "false"
 network_device = "wlo1"
-
-[xrandr]
-script = "~/.screenlayout/laptop.sh"
 
 [browser]
 cmd = "google-chrome-stable"

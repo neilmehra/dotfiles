@@ -15,9 +15,6 @@ right_padding = "10"
 window_gap = "15"
 
 [polybar]
-using_center = "true"
-using_left = "true"
-using_right = "false"
 network_device = "wlp6s0"
 
 [xrandr]
