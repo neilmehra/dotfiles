@@ -159,8 +159,22 @@ super + e
 
 {% if "laptop" in profiles %}
 
+{% if "displaylink2" in profiles %}
+
+super + g
+  bombadil link -p laptop displaylink2
+
+{% elif "displaylink3" in profiles %}
+
+super + g
+  bombadil link -p laptop displaylink3
+
+{% else %}
+
 super + g
   bombadil link -p laptop
+
+{% endif %}
 
 {% else %}
 

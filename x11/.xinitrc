@@ -22,7 +22,7 @@ fi
 
 
 # autostart
-{{ xrandr.script }}
+$HOME/.screenlayout/setup.sh
 sleep 2
 
 {% if "laptop" in profiles %}
