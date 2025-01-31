@@ -65,6 +65,11 @@ mpall() {
   mpv --shuffle --image-display-duration=5 --no-loop --loop-playlist *
 }
 
+fix() {
+  ~/scripts/xautostart.sh
+  xmodmap ~/.Xmodmap
+}
+
 (cat {{ wal }}/sequences &)
 
 source {{ wal }}/colors-tty.sh
