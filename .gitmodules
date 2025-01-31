@@ -1,3 +1,6 @@
 [submodule "nvim"]
 	path = nvim
 	url = git@github.com:AsianKoala/nvim.git
+[submodule "assets/wallpapers"]
+	path = assets/wallpapers
+	url = git@github.com:neilmehra/wallpapers.git
