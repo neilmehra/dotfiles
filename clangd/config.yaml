@@ -1,3 +1,5 @@
+If:
+  PathExclude: .*\.c
 CompileFlags:
   Add: [-std=c++23]
 
