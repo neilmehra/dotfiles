@@ -18,10 +18,6 @@ polybar -q left -c   ~/.config/polybar/config.ini &
 polybar -q left -c   ~/.config/polybar/config.ini &
 polybar -q right -c   ~/.config/polybar/config.ini &
 
-{% else %}
-
-polybar -q left -c   ~/.config/polybar/config.ini &
-
 {% endif %}
 
 
