@@ -39,8 +39,6 @@ super + {t,shift + t,s,f}
 	bspc node -t {tiled,pseudo_tiled,floating,fullscreen}
 
 # set the node flags
-super + ctrl + {m,x,y,z}
-	bspc node -g {marked,locked,sticky,private}
 
 #
 # focus/swap
@@ -76,7 +74,13 @@ super + {_,shift + }{1-9}
 	bspc {desktop -f,node -d} {1,2,3,4,5,6,7,8,9}
 
 super + shift + bracket{left,right}
-	bspc node -d {prev,next}.local
+  bspc node -d {prev,next}.local
+
+super + z
+	bspc desktop -f prev.local
+  
+super + x
+	bspc desktop -f next.local
 
 
 {% if "laptop" in profiles %}
@@ -157,6 +161,13 @@ super + c
 super + period 
   rofi -modi emoji -show emoji -kb-custom-1 Ctrl+C
 
+
+super + ctrl + {h,j,k,l}
+	bspc node -p {west,south,north,east}
+
+super + ctrl + space
+	bspc node -p cancel
+
 super + e
   pcmanfm 
 
@@ -171,6 +182,11 @@ super + g
 
 super + g
   bombadil link -p laptop displaylink3
+
+{% elif "laptophome" in profiles %}
+
+super + g
+  bombadil link -p laptop laptophome
 
 {% else %}
 

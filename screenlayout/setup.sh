@@ -11,6 +11,10 @@ xrandr --output {{ monitor.main }} --primary --mode 1920x1080 --pos 0x0 --rotate
 
 xrandr --output {{ monitor.main }} --primary --mode 1920x1080 --pos 0x0 --rotate normal --rate 144 --output {{ monitor.left }} --auto --left-of {{ monitor.main }} --output {{ monitor.right }} --auto --right-of {{ monitor.main }}
 
+{% elif "laptophome" in profiles %}
+
+xrandr --output {{ monitor.main }} --primary --mode 1920x1080 --pos 0x0 --rotate normal --rate 144 --output {{ monitor.left }} --auto --left-of {{ monitor.main }}
+
 {% else %}
 
 xrandr --output {{ monitor.main }} --primary --mode 1920x1080 --pos 0x0 --rotate normal --rate 144

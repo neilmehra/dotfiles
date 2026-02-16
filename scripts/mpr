@@ -1,0 +1,172 @@
+#!/usr/bin/env python3
+import argparse, os, re, sys, subprocess
+from pathlib import Path
+
+EXTS = {".mp4",".mkv",".avi",".mov",".webm",".flv",".wmv",".mpeg",".mpg",".3gp",".m4v",
+        ".ts",".jpg",".jpeg",".png",".gif",".bmp",".webp",".tiff"}
+
+def parse_args():
+    p = argparse.ArgumentParser(
+        description="Play media with mpv sorted by creation/download time (birth time) or name.")
+    p.add_argument("roots", nargs="+",
+                   help="One or more root directories.")
+    p.add_argument("--pattern", "-p", default=None,
+                   help="Case-insensitive regex applied to full *path*.")
+    p.add_argument("--sort", choices=["time","name"], default="time",
+                   help="Sort by 'time' (birth/mtime) or 'name'. Default: time")
+    p.add_argument("--oldest-first", action="store_true",
+                   help="Show oldest first (default is newest first).")
+    p.add_argument("--per-dir", action="store_true",
+                   help="Process each ROOT independently (filter/sort within each, then play each set).")
+    p.add_argument("--dry-run", action="store_true",
+                   help="Print list(s) instead of launching mpv.")
+    p.add_argument("--debug", action="store_true",
+                   help="Print debug info (counts, samples, timestamps).")
+    p.add_argument("--image-display-duration", type=int, default=3,
+                   help="mpv --image-display-duration (default: 3)")
+    return p.parse_args()
+
+def iter_media_files(root: Path):
+    stack = [root]
+    while stack:
+        d = stack.pop()
+        try:
+            with os.scandir(d) as it:
+                for e in it:
+                    try:
+                        if e.is_dir(follow_symlinks=False):
+                            stack.append(Path(e.path))
+                        elif e.is_file(follow_symlinks=False):
+                            if Path(e.name).suffix.lower() in EXTS:
+                                yield Path(e.path)
+                    except Exception:
+                        continue
+        except Exception:
+            continue
+
+def birth_or_mtime(path: Path) -> int:
+    # Prefer GNU stat birth time; fallback to mtime; last resort Python st_mtime.
+    try:
+        out = subprocess.check_output(["stat","-c","%W", str(path)],
+                                      stderr=subprocess.DEVNULL, text=True).strip()
+        bt = int(out)
+        if bt > 0:
+            return bt
+    except Exception:
+        pass
+    try:
+        out = subprocess.check_output(["stat","-c","%Y", str(path)],
+                                      stderr=subprocess.DEVNULL, text=True).strip()
+        return int(out)
+    except Exception:
+        try:
+            return int(path.stat().st_mtime)
+        except Exception:
+            return 0
+
+def collect_for_root(root: Path, pat: re.Pattern|None, debug: bool):
+    files = []
+    for p in iter_media_files(root):
+        if pat is None or pat.search(str(p)):
+            files.append(p)
+    if debug:
+        print(f"[dbg] root={root} matched={len(files)}")
+        for s in files[:5]:
+            print(f"[dbg]   sample: {s}")
+    return files
+
+def sort_files(files, mode: str, oldest_first: bool, debug: bool):
+    if mode == "name":
+        files.sort(key=lambda p: (p.name.lower(), str(p)))
+        if not oldest_first:
+            files.reverse()
+        return files
+    # time
+    keyed = [(birth_or_mtime(p), p) for p in files]
+    keyed.sort(key=lambda t: t[0])             # oldest→newest
+    if not oldest_first:
+        keyed.reverse()                         # newest→oldest
+    if debug and keyed:
+        print("[dbg] after sort (first 5):")
+        for ts, s in keyed[:5]:
+            print(f"[dbg]   {ts}\t{s}")
+    return [p for _, p in keyed]
+
+def launch_mpv(files, img_secs: int):
+    if not files:
+        return
+    cmd = ["prime-run", "mpv", f"--image-display-duration={img_secs}", "--"]
+    cmd.extend(str(p) for p in files)
+
+    subprocess.run(cmd, check=False)
+
+def main():
+    args = parse_args()
+    roots = [Path(r).resolve() for r in args.roots]
+    bad = [r for r in roots if not r.exists()]
+    if bad:
+        print("These roots do not exist:", *map(str, bad), file=sys.stderr)
+        sys.exit(2)
+
+    pat = re.compile(args.pattern, re.IGNORECASE) if args.pattern else None
+
+    if args.debug:
+        print(f"[dbg] ROOTS          = {', '.join(str(r) for r in roots)}")
+        print(f"[dbg] FILTER_PATTERN = {args.pattern or '<none>'}")
+        print(f"[dbg] SORT_MODE      = {args.sort}")
+        print(f"[dbg] ORDER          = {'oldest→newest' if args.oldest_first else 'newest→oldest'}")
+        print(f"[dbg] PER_DIR        = {args.per_dir}")
+
+    if args.per_dir:
+        # Process each root independently.
+        total = 0
+        for root in roots:
+            files = collect_for_root(root, pat, args.debug)
+            files = sort_files(files, args.sort, args.oldest_first, args.debug)
+            if args.dry_run:
+                if files:
+                    print(f"### {root}")
+                    for f in files:
+                        print(f)
+                    print(f"--- Found {len(files)} file(s) in: {root}")
+                else:
+                    print(f"### {root}\n--- Found 0 file(s) in: {root}")
+            else:
+                launch_mpv(files, args.image_display_duration)
+            total += len(files)
+        if args.dry_run:
+            print(f"TOTAL files across {len(roots)} roots: {total}")
+        return
+
+    # Aggregate mode: gather all then sort ONCE across roots
+    agg = []
+    seen = set()
+    for root in roots:
+        files = collect_for_root(root, pat, args.debug)
+        for p in files:
+            # de-dup, in case roots overlap (e.g., '.' and './subdir')
+            s = str(p)
+            if s not in seen:
+                seen.add(s)
+                agg.append(p)
+
+    agg_sorted = sort_files(agg, args.sort, args.oldest_first, args.debug)
+
+    if args.dry_run:
+        for f in agg_sorted:
+            print(f)
+        print("---")
+        print(f"Found {len(agg_sorted)} file(s) across {len(roots)} roots")
+        if args.pattern:
+            print(f"Filter: {args.pattern}")
+        print(f"Sort: {args.sort}, Order: {'oldest→newest' if args.oldest_first else 'newest→oldest'}")
+        return
+
+    if not agg_sorted:
+        print(f"No matching files found across {len(roots)} roots.")
+        return
+
+    launch_mpv(agg_sorted, args.image_display_duration)
+
+if __name__ == "__main__":
+    main()

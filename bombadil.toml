@@ -25,7 +25,9 @@ zathura = { source = "zathura", target = ".config/zathura" }
 
 cpxc = { source = "scripts/connect_pxc.sh", target = "scripts/connect_pxc.sh" }
 dpxc = { source = "scripts/disconnect_pxc.sh", target = "scripts/disconnect_pxc.sh" }
+fix = { source = "scripts/fix.sh", target = "scripts/fix.sh" }
 kbsetup = { source = "scripts/keyboard-setup.sh", target = "scripts/keyboard-setup.sh" }
+mpr = { source = "scripts/mpr", target = "scripts/mpr" }
 osh = { source = "scripts/osuhelper.sh", target = "scripts/osuhelper.sh" }
 ppxc = { source = "scripts/pair_pxc.sh", target = "scripts/pair_pxc.sh" }
 pyps = { source = "scripts/pyps.sh", target = "scripts/pyps.sh" }
@@ -50,11 +52,13 @@ bspwm = { source = "bspwm", target = ".config/bspwm" }
 polybar = { source = "polybar", target = ".config/polybar" }
 rofi = { source = "rofi", target = ".config/rofi" }
 sxhkd = { source = "sxhkd", target = ".config/sxhkd" }
+easyeffects = { source = "easyeffects", target = ".config/easyeffects" }
 
 betterlockscreen = { source = "betterlockscreen/betterlockscreenrc", target = ".config/betterlockscreenrc" }
 screenlayout = { source = "screenlayout", target = ".screenlayout" }
 xinitrc = { source = "x11/.xinitrc", target = ".xinitrc" }
 xmodmap = { source = "x11/.Xmodmap", target = ".Xmodmap" }
+
 
 
 [profiles.desktop]
@@ -75,3 +79,6 @@ vars = [ "vars/displaylink2.toml" ]
 vars = [ "vars/displaylink3.toml" ]
 
 
+[profiles.laptophome]
+
+vars = [ "vars/laptophome.toml" ]

@@ -16,4 +16,4 @@ window_gap = "15"
 network_device = "wlo1"
 
 [browser]
-cmd = "google-chrome-stable"
+cmd = "prime-run google-chrome-stable"

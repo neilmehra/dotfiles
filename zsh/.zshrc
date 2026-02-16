@@ -40,6 +40,9 @@ alias hgr="history | grep"
 alias up="cd .."
 alias gssh="ssh-add ~/.ssh/id_ed25519"
 alias fd="fd -H"
+alias mpr="~/scripts/mpr"
+alias c="clear"
+alias pr="prime-run mpv"
 
 mkc() {
   mkdir $1 
@@ -90,6 +93,8 @@ if [[ -n $SSH_CONNECTION ]] ; then
     neofetch
 fi
 
+
+eval "$(direnv hook zsh)"
 
 source $HOME/.rvm/scripts/rvm
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
