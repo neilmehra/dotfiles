@@ -95,7 +95,9 @@ export EDITOR="$VISUAL"
 export XDG_CONFIG_HOME="$HOME/.config"
 
 
-# source $HOME/.rvm/scripts/rvm
+# dont make eof kill term
+# i just lwk accidentally hit C-d a lot
+setopt IGNORE_EOF
 
 bindkey -s '^Z' 'fg\n'
 
