@@ -17,6 +17,16 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
+autoload -Uz add-zsh-hook
+_set_beam_cursor() { echo -ne '\e[5 q' }
+add-zsh-hook precmd _set_beam_cursor
+add-zsh-hook preexec _set_beam_cursor
+
+
+if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
+  exec tmux
+fi
+
 
 alias ranger="cat /home/neil/dotfiles/wal/backup/sequences && ranger"
 alias ls='exa --icons'
@@ -96,6 +106,3 @@ fi
 
 eval "$(direnv hook zsh)"
 
-source $HOME/.rvm/scripts/rvm
-# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
-export PATH="$PATH:$HOME/.rvm/bin"
