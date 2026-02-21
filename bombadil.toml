@@ -13,6 +13,7 @@ clangd = { source = "clangd", target = ".config/clangd" }
 gtk3 = { source = "gtk/gtk-3.0", target = ".config/gtk-3.0" }
 kitty = { source = "kitty", target = ".config/kitty" }
 nvim = { source = "nvim", target = ".config/nvim" }
+tmux = { source = "tmux", target = ".config/tmux" }
 mpd = { source = "mpd/mpd.conf", target = ".config/mpd/mpd.conf" }
 mpv = { source = "mpv", target = ".config/mpv" }
 ncb = { source = "ncmpcpp/bindings", target = ".config/ncmpcpp/bindings" }
