@@ -23,6 +23,7 @@ ranger = { source = "ranger", target = ".config/ranger" }
 redshift = { source = "redshift", target = ".config/redshift" }
 wal = { source = "wal", target = ".config/wal" }
 zathura = { source = "zathura", target = ".config/zathura" }
+htop = { source = "htop/htoprc", target = ".config/htop/htoprc" }
 
 cpxc = { source = "scripts/connect_pxc.sh", target = "scripts/connect_pxc.sh" }
 dpxc = { source = "scripts/disconnect_pxc.sh", target = "scripts/disconnect_pxc.sh" }

@@ -23,7 +23,11 @@ add-zsh-hook precmd _set_beam_cursor
 add-zsh-hook preexec _set_beam_cursor
 
 
-if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
+if command -v tmux &> /dev/null && [ -n "$PS1" ] && [ -z "$TMUX" ] && [[ "$TERM" != screen* ]] && [[ "$TERM" != tmux* ]]; then
+  # ensure sessions exist
+  tmux has-session -t spine    2>/dev/null || tmux new-session -d -s spine
+  tmux has-session -t research 2>/dev/null || tmux new-session -d -s research
+  # attach to main (creates if missing)
   exec tmux new-session -A -s main
 fi
 
@@ -33,7 +37,7 @@ alias ls='exa --icons'
 alias py='python3'
 alias icat="kitty +kitten icat --scale-up"
 alias wmc="xprop | grep WM_CLASS"
-alias grep='grep -i'
+alias grep='grep -i -P'
 alias vim='nvim'
 alias vi='nvim'
 alias setbg="feh --bg-fill"
@@ -46,7 +50,7 @@ alias gdl="gallery-dl"
 alias rm="rm -i"
 alias yt="$HOME/scripts/ycmd.sh"
 alias mwin="sudo mount /data/windows"
-alias hgr="history | grep"
+alias hgr="history | grep -i -P"
 alias up="cd .."
 alias gssh="ssh-add ~/.ssh/id_ed25519"
 alias fd="fd -H"
