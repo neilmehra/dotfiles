@@ -9,7 +9,12 @@ while pgrep -u $UID -x polybar >/dev/null; do sleep 1; done
 
 polybar -q center -c   ~/.config/polybar/config.ini &
 
-{% if "displaylink2" in profiles or "laptophome" in profiles %}
+{% if "home" in profiles %}
+
+polybar -q left -c   ~/.config/polybar/config.ini &
+polybar -q right -c   ~/.config/polybar/config.ini &
+
+{% elif "displaylink2" in profiles %}
 
 polybar -q left -c   ~/.config/polybar/config.ini &
 

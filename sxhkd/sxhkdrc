@@ -183,10 +183,10 @@ super + g
 super + g
   bombadil link -p laptop displaylink3
 
-{% elif "laptophome" in profiles %}
+{% elif "home" in profiles %}
 
 super + g
-  bombadil link -p laptop laptophome
+  bombadil link -p laptop home
 
 {% else %}
 

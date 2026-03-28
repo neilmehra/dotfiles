@@ -5,11 +5,19 @@ pgrep -x sxhkd > /dev/null || sxhkd &
 bspc rule -r "*"
 
 
+{% if "home" in profiles %}
+
+bspc wm -O {{ monitor.wide }}
+
+bspc monitor {{ monitor.wide }} -d 1 2 3 4 5
+bspc monitor {{ monitor.left }} -d 6 7 8 9 10
+bspc monitor {{ monitor.main }} -d 11 12 13 14 15
+
+{% elif "laptop" in profiles %}
+
 bspc wm -O {{ monitor.main }}
 
-{% if "laptop" in profiles %}
-
-{% if "displaylink2" in profiles or "laptophome" in profiles %}
+{% if "displaylink2" in profiles %}
 
 bspc monitor {{ monitor.main}} -d 1 2 3 4 5
 bspc monitor {{ monitor.left }} -d 6 7 8 9 10
@@ -29,6 +37,8 @@ bspc monitor {{ monitor.main }} -d 1 2 3 4 5 6 7 8 9 10
 
 {% else %}
 # desktop
+
+bspc wm -O {{ monitor.main }}
 
 bspc monitor {{ monitor.main }} -d 1 2 3 4 5
 bspc monitor {{ monitor.left }} -d 6 7 8 9 10

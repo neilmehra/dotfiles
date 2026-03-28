@@ -32,5 +32,7 @@ brightnessctl s 10%
 
 
 
+export XCURSOR_SIZE=24
+
 # wm
 exec bspwm

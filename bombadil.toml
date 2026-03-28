@@ -84,3 +84,7 @@ vars = [ "vars/displaylink3.toml" ]
 [profiles.laptophome]
 
 vars = [ "vars/laptophome.toml" ]
+
+[profiles.home]
+
+vars = [ "vars/home.toml" ]
