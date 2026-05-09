@@ -28,6 +28,7 @@ htop = { source = "htop/htoprc", target = ".config/htop/htoprc" }
 cpxc = { source = "scripts/connect_pxc.sh", target = "scripts/connect_pxc.sh" }
 dpxc = { source = "scripts/disconnect_pxc.sh", target = "scripts/disconnect_pxc.sh" }
 fix = { source = "scripts/fix.sh", target = "scripts/fix.sh" }
+gcp = { source = "scripts/gcp", target = "scripts/gcp" }
 kbsetup = { source = "scripts/keyboard-setup.sh", target = "scripts/keyboard-setup.sh" }
 mpr = { source = "scripts/mpr", target = "scripts/mpr" }
 osh = { source = "scripts/osuhelper.sh", target = "scripts/osuhelper.sh" }

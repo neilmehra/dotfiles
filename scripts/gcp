@@ -1,0 +1,542 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# ─────────────────────────────────────────────────────────────
+# gcp — GCP VM management for trading infra
+#
+#   gcp provision               # full stateless: delete → create → setup → verify
+#   gcp create                  # create both VMs
+#   gcp setup [inf|trader|all]  # kernel-tune + install deps
+#   gcp start [inf|trader|all]  # start VMs
+#   gcp stop  [inf|trader|all]  # stop VMs
+#   gcp status                  # list VMs + IPs
+#   gcp ssh   <inf|trader>      # SSH into a VM
+#   gcp verify [inf|trader|all] # post-reboot verification
+#   gcp costs                   # billing estimates
+#   gcp delete [inf|trader|all] # tear down VMs + disks
+# ─────────────────────────────────────────────────────────────
+
+INFERENCE_NAME="inference-service"
+INFERENCE_ZONE="asia-southeast1-b"
+INFERENCE_TYPE="n2-custom-10-81920"  # 2 vCPU, 16 GB — lightweight Python HTTP server
+
+TRADER_NAME="kalshi-trader"
+TRADER_ZONE="us-east4-c"
+TRADER_TYPE="n2-highmem-4"  # 4 vCPU, 32 GB — latency-tuned, isolate 0-2, housekeeping on 3
+
+IMAGE_FAMILY="rocky-linux-9-optimized-gcp"
+IMAGE_PROJECT="rocky-linux-cloud"
+
+# ─────────────────────────────────────────────────────────────
+# Helpers
+# ─────────────────────────────────────────────────────────────
+
+resolve_target() {
+    case "${1:-all}" in
+        inf|inference)  echo "${INFERENCE_NAME} ${INFERENCE_ZONE}" ;;
+        trader|quoter)  echo "${TRADER_NAME} ${TRADER_ZONE}" ;;
+        all)
+            echo "${INFERENCE_NAME} ${INFERENCE_ZONE}"
+            echo "${TRADER_NAME} ${TRADER_ZONE}"
+            ;;
+        *)  echo "Unknown target: $1 (use inf, trader, or all)" >&2; exit 1 ;;
+    esac
+}
+
+wait_for_ssh() {
+    local name="$1" zone="$2" max_wait=120 elapsed=0
+    echo ">>> Waiting for SSH on ${name}..."
+    while ! gcloud compute ssh "${name}" --zone="${zone}" --command="true" 2>/dev/null; do
+        sleep 5; elapsed=$((elapsed + 5))
+        if [ $elapsed -ge $max_wait ]; then
+            echo "ERROR: SSH not ready after ${max_wait}s" >&2; return 1
+        fi
+    done
+}
+
+# ─────────────────────────────────────────────────────────────
+# VM creation
+# ─────────────────────────────────────────────────────────────
+
+create_vms() {
+    echo "=== Creating ${INFERENCE_NAME} (${INFERENCE_ZONE}) ==="
+    gcloud compute instances create "${INFERENCE_NAME}" \
+        --zone="${INFERENCE_ZONE}" \
+        --machine-type="${INFERENCE_TYPE}" \
+        --image-family="${IMAGE_FAMILY}" \
+        --image-project="${IMAGE_PROJECT}" \
+        --boot-disk-size=50GB \
+        --boot-disk-type=pd-ssd \
+        --tags=inference-service
+
+    echo "=== Creating ${TRADER_NAME} (${TRADER_ZONE}) ==="
+    gcloud compute instances create "${TRADER_NAME}" \
+        --zone="${TRADER_ZONE}" \
+        --machine-type="${TRADER_TYPE}" \
+        --image-family="${IMAGE_FAMILY}" \
+        --image-project="${IMAGE_PROJECT}" \
+        --boot-disk-size=50GB \
+        --boot-disk-type=pd-ssd \
+        --tags=kalshi-trader
+
+    echo "=== Both VMs created ==="
+    gcloud compute instances list
+}
+
+# ─────────────────────────────────────────────────────────────
+# Setup: inference-service (2 vCPU — lightweight, no kernel tuning)
+# ─────────────────────────────────────────────────────────────
+
+setup_inference() {
+    echo "=== Setting up ${INFERENCE_NAME} ==="
+    wait_for_ssh "${INFERENCE_NAME}" "${INFERENCE_ZONE}"
+    gcloud compute ssh "${INFERENCE_NAME}" --zone="${INFERENCE_ZONE}" -- bash -s <<'REMOTE_EOF'
+set -euo pipefail
+sudo bash <<'SUDO_EOF'
+
+echo ">>> [1/3] Installing base packages"
+dnf install -y epel-release
+dnf config-manager --set-enabled crb
+dnf install -y \
+    tmux htop git mtr \
+    python3.11 python3.11-pip
+
+echo ">>> [2/3] Basic sysctl"
+cat > /etc/sysctl.d/99-inference.conf <<'SYSCTL'
+vm.swappiness = 0
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+net.ipv4.tcp_rmem = 4096 131072 16777216
+net.ipv4.tcp_wmem = 4096 131072 16777216
+net.ipv4.tcp_slow_start_after_idle = 0
+SYSCTL
+sysctl --system
+
+echo ">>> [3/3] Installing Tailscale"
+curl -fsSL https://tailscale.com/install.sh | sh
+
+echo ""
+echo "============================================"
+echo "  inference-service setup complete"
+echo "  No reboot needed (no kernel tuning)"
+echo "============================================"
+
+SUDO_EOF
+REMOTE_EOF
+}
+
+# ─────────────────────────────────────────────────────────────
+# Setup: kalshi-trader (4 vCPU — isolate 0-2, housekeeping on 3)
+#
+# Core topology (n2-highmem-4, 2 physical cores × 2 HT):
+#   Physical Core 0: CPU 0 + CPU 2
+#   Physical Core 1: CPU 1 + CPU 3
+#
+#   isolcpus=0-2  → 3 isolated logical CPUs
+#   CPU 3         → housekeeping (kernel, IRQs, systemd, tailscale, config-server)
+#   IRQ mask 0x8  → pin all IRQs to CPU 3
+# ─────────────────────────────────────────────────────────────
+
+setup_trader() {
+    echo "=== Tuning ${TRADER_NAME} ==="
+    wait_for_ssh "${TRADER_NAME}" "${TRADER_ZONE}"
+    gcloud compute ssh "${TRADER_NAME}" --zone="${TRADER_ZONE}" -- bash -s <<'REMOTE_EOF'
+set -euo pipefail
+sudo bash <<'SUDO_EOF'
+
+echo ">>> [1/7] Installing base packages"
+dnf install -y epel-release
+dnf config-manager --set-enabled crb
+dnf install -y \
+    kernel-tools tuned numactl grubby \
+    tmux htop git gcc-c++ cmake mtr perf \
+    python3.11 python3.11-pip
+
+# ── Kernel cmdline via grubby (BLS-compatible) ────────────
+echo ">>> [2/7] Configuring kernel parameters via grubby"
+KCMD="isolcpus=0-2 nohz_full=0-2 rcu_nocbs=0-2"
+KCMD+=" intel_idle.max_cstate=1 processor.max_cstate=1"
+KCMD+=" mitigations=off"
+KCMD+=" nmi_watchdog=0"
+KCMD+=" hugepagesz=2M hugepages=512"
+KCMD+=" transparent_hugepage=never"
+
+grubby --update-kernel=ALL --args="${KCMD}"
+
+echo "    grubby args set:"
+grubby --info=ALL | grep args
+
+# ── sysctl ────────────────────────────────────────────────
+echo ">>> [3/7] Writing sysctl config"
+cat > /etc/sysctl.d/99-trader-tune.conf <<'SYSCTL'
+# memory
+vm.swappiness = 0
+vm.nr_hugepages = 512
+vm.stat_interval = 120
+vm.dirty_background_ratio = 1
+vm.dirty_ratio = 2
+
+# NUMA
+kernel.numa_balancing = 0
+
+# timers / watchdog
+kernel.nmi_watchdog = 0
+kernel.timer_migration = 0
+
+# network: busy polling
+net.core.busy_poll = 50
+net.core.busy_read = 50
+
+# network: buffer sizes
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+net.ipv4.tcp_rmem = 4096 65536 16777216
+net.ipv4.tcp_wmem = 4096 65536 16777216
+
+# network: low latency
+net.ipv4.tcp_low_latency = 1
+net.ipv4.tcp_fastopen = 3
+net.ipv4.tcp_slow_start_after_idle = 0
+net.ipv4.tcp_no_metrics_save = 1
+SYSCTL
+
+sysctl --system
+
+# ── THP ───────────────────────────────────────────────────
+echo ">>> [4/7] Disabling THP"
+echo never > /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null || true
+echo never > /sys/kernel/mm/transparent_hugepage/defrag 2>/dev/null || true
+
+# ── CPU governor + tuned ──────────────────────────────────
+echo ">>> [5/7] Setting CPU governor"
+for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+    echo performance > "$cpu" 2>/dev/null || true
+done
+tuned-adm profile latency-performance 2>/dev/null || true
+
+# ── IRQ affinity: pin all IRQs to core 3 ─────────────────
+echo ">>> [6/7] Pinning IRQs to housekeeping core 3"
+# mask 0x8 = CPU 3
+for irqdir in /proc/irq/[0-9]*; do
+    echo "8" > "${irqdir}/smp_affinity" 2>/dev/null || true
+done
+
+systemctl stop irqbalance 2>/dev/null || true
+systemctl disable irqbalance 2>/dev/null || true
+
+cat > /etc/systemd/system/irq-affinity.service <<'IRQSVC'
+[Unit]
+Description=Pin IRQs to housekeeping core 3
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'for d in /proc/irq/[0-9]*/smp_affinity; do echo 8 > "$d" 2>/dev/null || true; done'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+IRQSVC
+systemctl daemon-reload
+systemctl enable irq-affinity.service
+
+# ── ulimits + ramdisk + tailscale ─────────────────────────
+echo ">>> [7/7] ulimits, ramdisk, Tailscale"
+cat > /etc/security/limits.d/99-trader.conf <<'LIMITS'
+*    hard   memlock    unlimited
+*    soft   memlock    unlimited
+*    hard   rtprio     99
+*    soft   rtprio     99
+*    hard   nofile     1048576
+*    soft   nofile     1048576
+LIMITS
+
+# ramdisk for recordings (idempotent)
+mkdir -p /mnt/recordings
+grep -q '/mnt/recordings' /etc/fstab || \
+    echo "tmpfs /mnt/recordings tmpfs size=512M,noatime,nodiratime 0 0" >> /etc/fstab
+mount /mnt/recordings 2>/dev/null || true
+
+curl -fsSL https://tailscale.com/install.sh | sh
+
+echo ""
+echo "============================================"
+echo "  kalshi-trader setup complete"
+echo "  REBOOT REQUIRED for kernel params"
+echo "============================================"
+echo ""
+echo "Thread pinning (verify sibling topology with lscpu):"
+echo "  taskset -c 0-2 ./kalshi_trader"
+
+SUDO_EOF
+REMOTE_EOF
+
+    echo ">>> Rebooting ${TRADER_NAME}..."
+    gcloud compute instances reset "${TRADER_NAME}" --zone="${TRADER_ZONE}" || true
+}
+
+# ─────────────────────────────────────────────────────────────
+# Verify (runs on remote box, checks kernel params took effect)
+# ─────────────────────────────────────────────────────────────
+
+do_verify() {
+    resolve_target "${1:-all}" | while read -r name zone; do
+        echo "=== Verifying ${name} ==="
+        wait_for_ssh "${name}" "${zone}"
+        gcloud compute ssh "${name}" --zone="${zone}" -- bash -s <<'VERIFY_EOF'
+echo "── cmdline ──"
+cat /proc/cmdline
+echo ""
+echo "── isolated CPUs ──"
+cat /sys/devices/system/cpu/isolated
+echo ""
+echo "── online CPUs ──"
+nproc
+echo ""
+echo "── thread siblings ──"
+cat /sys/devices/system/cpu/cpu*/topology/thread_siblings_list 2>/dev/null || echo "n/a"
+echo ""
+echo "── HugePages ──"
+grep -i hugepages /proc/meminfo
+echo ""
+echo "── THP ──"
+cat /sys/kernel/mm/transparent_hugepage/enabled
+echo ""
+echo "── sysctl ──"
+sysctl vm.swappiness vm.nr_hugepages kernel.numa_balancing \
+       kernel.nmi_watchdog kernel.timer_migration \
+       net.core.busy_poll net.core.busy_read 2>/dev/null
+echo ""
+echo "── IRQ affinity (first 5) ──"
+for irq in $(ls /proc/irq/ | grep -E '^[0-9]+$' | head -5); do
+    printf "IRQ %3s -> %s\n" "$irq" "$(cat /proc/irq/${irq}/smp_affinity 2>/dev/null)"
+done
+echo ""
+echo "── Tailscale ──"
+tailscale status 2>/dev/null || echo "not connected"
+VERIFY_EOF
+        echo ""
+    done
+}
+
+# ─────────────────────────────────────────────────────────────
+# Provision: full stateless delete → create → setup → verify
+# ─────────────────────────────────────────────────────────────
+
+do_provision() {
+    local target="${1:-all}"
+    echo "=========================================="
+    echo "  FULL PROVISION: ${target}"
+    echo "  This will DELETE and recreate VM(s)."
+    echo "=========================================="
+    read -rp "Continue? [y/N] " confirm
+    [[ "${confirm}" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 0; }
+
+    # delete (ignore errors if VMs don't exist)
+    echo ""
+    echo ">>> Phase 1: Delete existing VMs"
+    resolve_target "${target}" | while read -r name zone; do
+        echo "    Deleting ${name}..."
+        gcloud compute instances delete "${name}" --zone="${zone}" --quiet 2>/dev/null || true
+    done
+
+    # create
+    echo ""
+    echo ">>> Phase 2: Create VMs"
+    case "${target}" in
+        inf|inference)
+            gcloud compute instances create "${INFERENCE_NAME}" \
+                --zone="${INFERENCE_ZONE}" --machine-type="${INFERENCE_TYPE}" \
+                --image-family="${IMAGE_FAMILY}" --image-project="${IMAGE_PROJECT}" \
+                --boot-disk-size=50GB --boot-disk-type=pd-ssd --tags=inference-service
+            ;;
+        trader|quoter)
+            gcloud compute instances create "${TRADER_NAME}" \
+                --zone="${TRADER_ZONE}" --machine-type="${TRADER_TYPE}" \
+                --image-family="${IMAGE_FAMILY}" --image-project="${IMAGE_PROJECT}" \
+                --boot-disk-size=50GB --boot-disk-type=pd-ssd --tags=kalshi-trader
+            ;;
+        all)
+            gcloud compute instances create "${INFERENCE_NAME}" \
+                --zone="${INFERENCE_ZONE}" --machine-type="${INFERENCE_TYPE}" \
+                --image-family="${IMAGE_FAMILY}" --image-project="${IMAGE_PROJECT}" \
+                --boot-disk-size=50GB --boot-disk-type=pd-ssd --tags=inference-service
+            gcloud compute instances create "${TRADER_NAME}" \
+                --zone="${TRADER_ZONE}" --machine-type="${TRADER_TYPE}" \
+                --image-family="${IMAGE_FAMILY}" --image-project="${IMAGE_PROJECT}" \
+                --boot-disk-size=50GB --boot-disk-type=pd-ssd --tags=kalshi-trader
+            ;;
+    esac
+
+    # setup
+    echo ""
+    echo ">>> Phase 3: Setup + tuning"
+    case "${target}" in
+        inf|inference)  setup_inference ;;
+        trader|quoter)  setup_trader ;;
+        all)            setup_inference; setup_trader ;;
+    esac
+
+    # wait for reboot then verify
+    echo ""
+    echo ">>> Phase 4: Waiting for reboot + verification"
+    sleep 30
+    do_verify "${target}"
+
+    echo ""
+    echo "=========================================="
+    echo "  PROVISION COMPLETE"
+    echo "=========================================="
+    echo ""
+    echo "Next steps:"
+    echo "  gcp ssh inf    -- sudo tailscale up --authkey=tskey-auth-XXXXX"
+    echo "  gcp ssh trader -- sudo tailscale up --authkey=tskey-auth-XXXXX"
+    do_status
+}
+
+# ─────────────────────────────────────────────────────────────
+# Start / Stop / Status / SSH / Costs / Delete
+# ─────────────────────────────────────────────────────────────
+
+do_start() {
+    resolve_target "${1:-all}" | while read -r name zone; do
+        echo ">>> Starting ${name} (${zone})"
+        gcloud compute instances start "${name}" --zone="${zone}"
+    done
+    echo ">>> Waiting 10s for boot..."
+    sleep 10
+    do_status
+}
+
+do_stop() {
+    resolve_target "${1:-all}" | while read -r name zone; do
+        echo ">>> Stopping ${name} (${zone})"
+        gcloud compute instances stop "${name}" --zone="${zone}"
+    done
+}
+
+do_status() {
+    echo "=== VM Status ==="
+    gcloud compute instances list \
+        --filter="name=(${INFERENCE_NAME} OR ${TRADER_NAME})" \
+        --format="table(name, zone.basename(), machineType.basename(), status, networkInterfaces[0].accessConfigs[0].natIP:label=EXTERNAL_IP)"
+    echo ""
+    echo "=== Persistent Disks ==="
+    gcloud compute disks list \
+        --filter="name=(${INFERENCE_NAME} OR ${TRADER_NAME})" \
+        --format="table(name, zone.basename(), sizeGb, type.basename(), status)"
+}
+
+do_ssh() {
+    case "${1:-}" in
+        inf|inference)
+            shift
+            gcloud compute ssh "${INFERENCE_NAME}" --zone="${INFERENCE_ZONE}" -- "$@"
+            ;;
+        trader|quoter)
+            shift
+            gcloud compute ssh "${TRADER_NAME}" --zone="${TRADER_ZONE}" -- "$@"
+            ;;
+        *)
+            echo "Usage: $0 ssh <inf|trader> [command...]"
+            exit 1
+            ;;
+    esac
+}
+
+do_costs() {
+    echo "=== Estimated Costs (on-demand, pre-sustained-use discount) ==="
+    echo ""
+    echo "  ${INFERENCE_NAME} (${INFERENCE_TYPE}):"
+    echo "    Running:  ~\$0.16/hr  (~\$115/mo)"
+    echo "    Stopped:  ~\$0.0085/hr (~\$6.20/mo, disk only: 50GB pd-ssd)"
+    echo ""
+    echo "  ${TRADER_NAME} (${TRADER_TYPE}):"
+    echo "    Running:  ~\$0.28/hr  (~\$200/mo)"
+    echo "    Stopped:  ~\$0.0085/hr (~\$6.20/mo, disk only: 50GB pd-ssd)"
+    echo ""
+    echo "  Combined:"
+    echo "    Both running:  ~\$0.44/hr  (~\$315/mo)"
+    echo "    Both stopped:  ~\$0.017/hr (~\$12.40/mo, disks only)"
+    echo ""
+    echo "  Sustained-use discount kicks in automatically after ~25% monthly usage."
+    echo "  Tip: stop VMs when not in use — you only pay for disks."
+    echo ""
+    do_status
+}
+
+do_delete() {
+    local target="${1:-all}"
+    echo "WARNING: This will permanently delete VM(s) and their boot disk(s)."
+    read -rp "Delete target '${target}'? [y/N] " confirm
+    [[ "${confirm}" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 0; }
+
+    resolve_target "${target}" | while read -r name zone; do
+        echo ">>> Deleting ${name} (${zone})"
+        gcloud compute instances delete "${name}" --zone="${zone}" --quiet
+    done
+}
+
+# ─────────────────────────────────────────────────────────────
+# Main dispatch
+# ─────────────────────────────────────────────────────────────
+case "${1:-}" in
+    provision)
+        do_provision "${2:-all}"
+        ;;
+    create)
+        create_vms
+        ;;
+    setup)
+        case "${2:-all}" in
+            inf|inference)  setup_inference ;;
+            trader|quoter)  setup_trader ;;
+            all)            setup_inference; setup_trader ;;
+            *)              echo "Usage: $0 setup [inf|trader|all]"; exit 1 ;;
+        esac
+        ;;
+    start)
+        do_start "${2:-all}"
+        ;;
+    stop)
+        do_stop "${2:-all}"
+        ;;
+    status|st)
+        do_status
+        ;;
+    ssh)
+        do_ssh "${@:2}"
+        ;;
+    verify)
+        do_verify "${2:-all}"
+        ;;
+    costs)
+        do_costs
+        ;;
+    delete)
+        do_delete "${2:-all}"
+        ;;
+    *)
+        cat <<EOF
+Usage: $0 <command> [target]
+
+  Full lifecycle:
+    provision [inf|trader|all]  Stateless: delete → create → setup → verify
+
+  Individual steps:
+    create                      Create both VMs
+    setup     [inf|trader|all]  Kernel-tune + install deps
+    verify    [inf|trader|all]  Check kernel params post-reboot
+    delete    [inf|trader|all]  Tear down VMs + disks
+
+  Daily use:
+    start  [inf|trader|all]     Start VMs
+    stop   [inf|trader|all]     Stop VMs
+    status                      Show VM status + IPs
+    ssh    <inf|trader>         SSH into a VM
+    costs                       Show billing estimates
+
+  Targets: inf, trader, all (default)
+EOF
+        exit 1
+        ;;
+esac

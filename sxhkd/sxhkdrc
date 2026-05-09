@@ -47,7 +47,7 @@ super + {t,shift + t,s,f}
 
 super + {h,j,k,l}
   dir={west,south,north,east}; \
-  bspc node "$dir.local" -f \ 
+  bspc node "$dir.local" -f \
     || bspc monitor "$dir" -f
 
 super + shift + {h,j,k,l}

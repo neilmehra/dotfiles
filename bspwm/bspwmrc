@@ -7,10 +7,10 @@ bspc rule -r "*"
 
 {% if "home" in profiles %}
 
-bspc wm -O {{ monitor.wide }}
+bspc wm -O {{ monitor.left }} {{ monitor.wide }} {{ monitor.main }}
 
-bspc monitor {{ monitor.wide }} -d 1 2 3 4 5
-bspc monitor {{ monitor.left }} -d 6 7 8 9 10
+bspc monitor {{ monitor.left }} -d 1 2 3 4 5
+bspc monitor {{ monitor.wide }} -d 6 7 8 9 10
 bspc monitor {{ monitor.main }} -d 11 12 13 14 15
 
 {% elif "laptop" in profiles %}
